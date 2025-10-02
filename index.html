@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TEAM JOMAR NORTH MONITORING</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin:20px;
+      background:#f9f9f9;
+      color:#111;
+    }
+    table {
+      border-collapse: collapse;
+      width:100%;
+      background:#fff;
+      margin-bottom:10px;
+    }
+    th,td {
+      border:1px solid #ccc;
+      padding:6px 10px;
+      font-size:14px;
+      text-align:left;
+    }
+    th {background:#eee}
+    select,input {
+      font-size:13px;
+      padding:4px 6px;
+    }
+    .status-select {width:160px}
+    button {
+      padding:6px 12px;
+      font-size:14px;
+      cursor:pointer;
+      border:1px solid #444;
+      border-radius:4px;
+      background:#eee;
+      margin-right:6px;
+    }
+    button:hover {background:#ddd}
+  </style>
+</head>
+<body>
+  <h2>TEAM JOMAR NORTH MONITORING</h2>
+
+  <table id="trackerTable">
+    <thead>
+      <tr>
+        <th>Status</th>
+        <th>Status (Payment)</th>
+        <th>Status (Proposal)</th>
+        <th>Status (Work)</th>
+        <th>Handled By</th>
+        <th>ORDER #</th>
+        <th>QN REFERENCE</th>
+        <th>CLIENT/PO REF#</th>
+        <th>COMPANY NAME</th>
+        <th>PROJECT NAME</th>
+        <th>SCOPE OF WORK</th>
+        <th>SQ#</th>
+        <th>SO#</th>
+        <th>PR#</th>
+        <th>FEWR#</th>
+        <th>FEWR DATE</th>
+        <th>COMPLETION DATE</th>
+        <th>DR #</th>
+        <th>DR DATE</th>
+        <th>DR DATE RECEIVED</th>
+        <th>SI DATE</th>
+        <th>SI#</th>
+        <th>CR# & DATE</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody id="tableBody"></tbody>
+  </table>
+
+  <button onclick="addEntry()">Add Entry</button>
+
+  <!-- Firebase SDK -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+
+  <script>
+    // 🔑 Replace with your own Firebase config values
+    const firebaseConfig = {
+      apiKey: "AIzaSyEXAMPLE123456",
+      authDomain: "teamjomarnorth.firebaseapp.com",
+      databaseURL: "https://teamjomarnorth-default-rtdb.firebaseio.com",
+      projectId: "teamjomarnorth",
+      storageBucket: "teamjomarnorth.appspot.com",
+      messagingSenderId: "123456789",
+      appId: "1:123456789:web:abc123"
+    };
+
+    // ✅ Initialize Firebase ONCE
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.database();
+    const tableBody = document.getElementById("tableBody");
+
+    // ➕ Add entry
+    function addEntry() {
+      const newEntry = {
+        status: "For quotation",
+        payment: "For collection",
+        proposal: "Proposal sent",
+        work: "Waiting for PO",
+        handled: "ENGR. HEINDRIX",
+        order: "", qn: "", client: "", company: "", project: "", scope: "",
+        sq: "", so: "", pr: "", fewr: "", fewrDate: "", completion: "",
+        dr: "", drDate: "", drReceived: "", siDate: "", si: "", cr: ""
+      };
+      const key = db.ref("entries").push().key;
+      db.ref("entries/" + key).set(newEntry);
+    }
+
+    // ❌ Delete entry
+    function deleteRow(key) {
+      db.ref("entries/" + key).remove();
+    }
+
+    // 🖊️ Render table row
+    function renderRow(key, data) {
+      const row = document.createElement("tr");
+
+      function makeSelect(options, value, field) {
+        const select = document.createElement("select");
+        select.className = "status-select";
+        options.forEach(opt => {
+          const option = document.createElement("option");
+          option.text = opt;
+          select.add(option);
+        });
+        select.value = value;
+        select.onchange = e => db.ref("entries/" + key + "/" + field).set(e.target.value);
+        return select;
+      }
+
+      function makeInput(value, field, type="text") {
+        const input = document.createElement("input");
+        input.type = type;
+        input.value = value;
+        input.onchange = e => db.ref("entries/" + key + "/" + field).set(e.target.value);
+        return input;
+      }
+
+      // Create empty cells
+      row.innerHTML = `
+        <td></td><td></td><td></td><td></td>
+        <td></td><td></td><td></td><td></td>
+        <td></td><td></td><td></td><td></td>
+        <td></td><td></td><td></td><td></td>
+        <td></td><td></td><td></td><td></td>
+        <td></td><td></td><td></td><td><button>Delete</button></td>
+      `;
+
+      // Attach dropdowns
+      row.cells[0].appendChild(makeSelect(
+        ["For quotation","For order","For mobilization","Completed"],
+        data.status, "status"
+      ));
+      row.cells[1].appendChild(makeSelect(
+        ["Paid","For collection","Billed/Invoice","Waiting for payment","Requested invoice","For billing","Waiting for devices","50% DP; Progress Billing","Waiting for DR","Upon Invoice"],
+        data.payment, "payment"
+      ));
+      row.cells[2].appendChild(makeSelect(
+        ["Proposal sent","Processing","Ongoing","Work done"],
+        data.proposal, "proposal"
+      ));
+      row.cells[3].appendChild(makeSelect(
+        ["Closed","Waiting for PO","For signed COC","For COC"],
+        data.work, "work"
+      ));
+      row.cells[4].appendChild(makeSelect(
+        ["ENGR. HEINDRIX","ENGR. MICHELL","ENGR. JHANIELLA"],
+        data.handled, "handled"
+      ));
+
+      // Attach inputs
+      const fields = ["order","qn","client","company","project","scope","sq","so","pr","fewr","fewrDate","completion","dr","drDate","drReceived","siDate","si","cr"];
+      const types  = ["text","text","text","text","text","text","text","text","]()
